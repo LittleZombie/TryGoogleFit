@@ -11,7 +11,6 @@ import com.google.android.gms.fitness.Fitness
 import com.google.android.gms.fitness.data.Bucket
 import com.google.android.gms.fitness.data.DataType
 import com.google.android.gms.fitness.data.Field
-import com.google.android.gms.fitness.data.Field.FIELD_STEPS
 import com.google.android.gms.fitness.request.DataReadRequest
 import com.google.android.gms.tasks.Tasks
 import com.google.gson.Gson
@@ -22,13 +21,12 @@ import kotlinx.coroutines.launch
 import java.util.*
 import java.util.concurrent.TimeUnit
 import com.google.android.gms.fitness.request.SessionReadRequest
-
+import java.text.SimpleDateFormat
 
 
 class GoogleFitController {
 
     private val TAG = this.javaClass.simpleName
-    private val supervisorJob = SupervisorJob()
     private val scope = Scope(Scopes.FITNESS_ACTIVITY_READ)
 
     companion object {
@@ -63,6 +61,7 @@ class GoogleFitController {
         }
     }
 
+    // 獲取睡眠時間
     fun requestSessionData(context: Context, onResult:(text: String) -> Unit) {
         val startTime = createStartTime()
         val endTime = createEndTime()
@@ -88,18 +87,17 @@ class GoogleFitController {
                         if (it.isSuccessful) {
                             Log.d(TAG, "requestSessionData OnComplete(isSuccessful): ${Gson().toJson(it)}")
                             it.result?.sessions?.let { sessions ->
-                                onResult(Gson().toJson(sessions))
-
                                 sessions.forEach { session ->
                                     if (session.name?.toLowerCase()?.contains("sleep") == true) {
                                         Log.i(TAG, "- session: ${Gson().toJson(session)}")
 
                                         val time = session.getEndTime(TimeUnit.MILLISECONDS) - session.getStartTime(TimeUnit.MILLISECONDS)
                                         val minutes = (time / 1000) / 60
-                                        Log.i(TAG, " minutes = $minutes")
                                         val hour = minutes / 60
                                         val minute = minutes % 60
-                                        Log.i(TAG, "睡眠時間 $hour:$minute")
+
+                                        val text = "${startTime.time} 到 ${endTime.time}\n睡眠時間共 $hour:$minute"
+                                        onResult(text)
                                     }
                                 }
                             }
@@ -134,10 +132,9 @@ class GoogleFitController {
                     }
                     .addOnCompleteListener {
                         if (it.isSuccessful) {
-                            Log.e(TAG, "requestHistoryData OnComplete(isSuccessful): ${Gson().toJson(it)}")
                             it.result?.buckets?.run {
-                                parseData(this)
-                                onResult(Gson().toJson(this))
+                                val text = "${startTime.time} 到 ${endTime.time}\n步數共 ${parseData(this)}"
+                                onResult(text)
                             }
                         } else {
                             disconnect(context)
@@ -169,7 +166,7 @@ class GoogleFitController {
             .build()
     }
 
-    private fun parseData(buckets: List<Bucket>) {
+    private fun parseData(buckets: List<Bucket>): Int {
         var totalSteps = 0
         buckets.forEach { bucket ->
             Log.i(TAG, "- bucket : ${Gson().toJson(bucket)}")
@@ -190,6 +187,7 @@ class GoogleFitController {
             }
         }
         Log.d(TAG, "          > totalSteps : $totalSteps")
+        return totalSteps
     }
 
     private fun createEndTime(): Date {

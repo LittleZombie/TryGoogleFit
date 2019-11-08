@@ -1,5 +1,10 @@
 <resources>
     <string name="app_name">TryGoogleFit</string>
-    <string name="connect">Connect</string>
-    <string name="disconnect">Disconnect</string>
+    <string name="connect">連結帳號</string>
+    <string name="disconnect">解除連結</string>
+    <string name="request_step_data">取得步數資料</string>
+    <string name="request_sleep_data">取得睡眠時間資料</string>
+    <string name="clear">清除</string>
+    <string name="permission">請允許 TryGoogleFit 使用你從事的體能活動紀錄</string>
+    <string name="request_activity_permission">更新權限</string>
 </resources>
